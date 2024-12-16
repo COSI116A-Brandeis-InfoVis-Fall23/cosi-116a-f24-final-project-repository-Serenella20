@@ -83,6 +83,22 @@ d3.json("data/Fuel_and_Energy_cleaned.json").then((data) => {
     svg.append("g")
         .call(d3.axisLeft(yScale).tickFormat((d) => `${d / 1e6}M`));
 
+    // Add axis legends
+    svg.append("text")
+        .attr("text-anchor", "middle")
+        .attr("x", width / 2) 
+        .attr("y", height + margin.bottom - 10)
+        .style("font-size", "14px")
+        .text("Years");
+
+    svg.append("text")
+        .attr("text-anchor", "middle")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height / 2) 
+        .attr("y", -margin.left + 20) 
+        .style("font-size", "14px")
+        .text("Miles Traveled (in Millions)");
+
     // Line generator
     const line = d3.line()
         .x((d) => xScale(d.Year))
