@@ -1,10 +1,16 @@
+ /* I used the following article as refrence 
+ 1) From Dev by Brian Neville-O'Neill --> https://dev.to/bnevilleoneill/state-management-pattern-in-javascript-sharing-data-across-components-2gkj
+
+ Information above also Included in the Acknowledgments portion of the html file.*/
+
+
 export const state = {
-  selectedFuelTypes: [], // Shared state for selected fuel types
+  selectedFuelTypes: [], 
 };
 
 export function updateState(newState) {
   Object.assign(state, newState);
-  notifyListeners(); // Notify listeners about the state change
+  notifyListeners();
 }
 
 export function getState() {
@@ -13,7 +19,6 @@ export function getState() {
 
 const listeners = [];
 
-// Allow visualizations to subscribe to state changes
 export function subscribe(listener) {
   listeners.push(listener);
 }

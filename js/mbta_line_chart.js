@@ -4,8 +4,7 @@
  Information above also Included in the Acknowledgments portion of the html file.
  */
 
-// Initialize selectedFuelTypes globally to keep track of the fuel types currently selected to allow for interactivity between views.
-window.selectedFuelTypes = [];
+ import { state, updateState, subscribe } from './state.js';
 
 // Load the data
 d3.json("data/Fuel_and_Energy_cleaned.json").then((data) => {
@@ -98,8 +97,7 @@ d3.json("data/Fuel_and_Energy_cleaned.json").then((data) => {
         .each(function ([fuelType, values]) {
             const group = d3.select(this);
 
-            // Made the clickable area bigger the user doesn't have to click precisly on the line for the brushing and linking to work.
-            // Meaning, the user can click a little above/bellow the line and the functionality will still work
+            // Make the clickable area bigger for brushing and linking
             group.append("path")
                 .attr("class", "line-click-area")
                 .attr("fill", "none")
@@ -107,78 +105,71 @@ d3.json("data/Fuel_and_Energy_cleaned.json").then((data) => {
                 .attr("stroke", "transparent")
                 .attr("d", line(values))
                 .on("click", function () {
-                    const isAlreadySelected = window.selectedFuelTypes.includes(fuelType);
-                    if (!isAlreadySelected) {
-                        // Adds the clicked lines to the global variable selectedFuelTypes to keep track of the fule types selected.
-                        window.selectedFuelTypes.push(fuelType);
-                    } else {
-                        // Removes the clicked line 
-                        window.selectedFuelTypes = window.selectedFuelTypes.filter(
-                            (f) => f !== fuelType
-                        );
-                    }
-                    svg.selectAll(".line")
-                        .style("opacity", ([fuelType]) =>
-                            window.selectedFuelTypes.length === 0 ||
-                                window.selectedFuelTypes.includes(fuelType)
-                                ? 1
-                                : 0.25
-                        );
-
-                    
-                    svg.selectAll(".point")
-                        .style("opacity", function (d) {
-                            return window.selectedFuelTypes.length === 0 ||
-                                window.selectedFuelTypes.includes(d.FuelType)
-                                ? 1
-                                : 0.1
-                        }
-                        );
-                    // Updates the Sankey diagram 
-                    updateSankey(window.selectedFuelTypes);
+                    const isAlreadySelected = state.selectedFuelTypes.includes(fuelType);
+                    const updatedFuelTypes = isAlreadySelected
+                        ? state.selectedFuelTypes.filter((f) => f !== fuelType)
+                        : [...state.selectedFuelTypes, fuelType];
+                    updateState({ selectedFuelTypes: updatedFuelTypes });
                 });
 
-            group.append("path")
+                group.append("path")
                 .attr("class", "line")
                 .attr("fill", "none")
                 .attr("stroke", colorScale(fuelType))
                 .attr("stroke-width", 2)
                 .attr("d", line(values));
-
-            //adds points to each data point
-            for (const element of nestedData) {
-                svg.selectAll(".circle")
-                    .data(element[1])
-                    .enter()
-                    .append("circle")
-                    .attr("class", "point")
-                    .attr("cx", function (d) { return xScale(d.Year) })
-                    .attr("cy", function (d) { return yScale(d.Miles) })
-                    .attr("r", 3)
-                    .on('mouseover', function (event, d) {
-                        // check if tooltip should appear and shows tooltip
-                        if(selectedFuelTypes.includes(d.FuelType) || selectedFuelTypes.length === 0){
-                        const milesInMillions = (d.Miles / 1e6).toFixed(1);
-                        const tooltipMiles = `${milesInMillions}M`;
-                        tooltip.html(
-                            `<strong>Year:</strong> ${d.Year}<br>
-                                                <strong>Miles Traveled:</strong> ${tooltipMiles}<br>
-                                                 <strong>Fuel Source:</strong> ${d.FuelType}`
-                        ).style("visibility", "visible");
-                    }})
-                    .on("mousemove", function (event) {
-                        tooltip.style("top", `${event.pageY - 100}px`)
-                            .style("left", `${event.pageX - 100}px`);
-                    })
-                    .on('mouseout', function (event, d) {
-                        //hide tooltip
-                        tooltip.style("visibility", "hidden");
-                    });
-            }
-
-
         });
 
+    // Add points to each data point
+    nestedData.forEach(([fuelType, values]) => {
+        svg.selectAll(`.point-${fuelType}`)
+            .data(values)
+            .enter()
+            .append("circle")
+            .attr("class", "point")
+            .attr("cx", (d) => xScale(d.Year))
+            .attr("cy", (d) => yScale(d.Miles))
+            .attr("r", 3)
+            .on("mouseover", function (event, d) {
+                if (
+                    state.selectedFuelTypes.includes(d.FuelType) ||
+                    state.selectedFuelTypes.length === 0
+                ) {
+                    const milesInMillions = (d.Miles / 1e6).toFixed(1);
+                    tooltip.html(
+                        `<strong>Year:</strong> ${d.Year}<br>
+                         <strong>Miles Traveled:</strong> ${milesInMillions}M<br>
+                         <strong>Fuel Source:</strong> ${d.FuelType}`
+                    ).style("visibility", "visible");
+                }
+            })
+            .on("mousemove", function (event) {
+                tooltip.style("top", `${event.pageY - 100}px`).style(
+                    "left",
+                    `${event.pageX - 100}px`
+                );
+            })
+            .on("mouseout", function () {
+                tooltip.style("visibility", "hidden");
+            });
+    });
+
+    // Subscribe to state changes to update the chart
+    subscribe(({ selectedFuelTypes }) => {
+        svg.selectAll(".line")
+            .style("opacity", ([fuelType]) =>
+                selectedFuelTypes.length === 0 || selectedFuelTypes.includes(fuelType)
+                    ? 1
+                    : 0.25
+            );
+
+        svg.selectAll(".point")
+            .style("opacity", (d) =>
+                selectedFuelTypes.length === 0 || selectedFuelTypes.includes(d.FuelType)
+                    ? 1
+                    : 0.1
+            );
+    });
 
     // Creates legend
     svg.selectAll(".legend")
