@@ -1,4 +1,6 @@
 # Put any data files in this folder
+Our data set is “MTBA Fuel and Energy” 
+Part of the National Transit Database's Annual Database Energy Consumption table
 
 Ideally your data is a CSV file.
 

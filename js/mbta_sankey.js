@@ -187,6 +187,32 @@ function renderSankey(data) {
         .style("fill", "#000")
         .style("pointer-events", "none");
 
+    // Adds legend for modes of transportation.
+    const legendData = [
+    { mode: "CR", description: "Commuter Rail" },
+    { mode: "DR", description: "Demand Response" },
+    { mode: "FB", description: "Ferry Boat" },
+    { mode: "HR", description: "Heavy Rail" },
+    { mode: "LR", description: "Light Rail" },
+    { mode: "MB", description: "Motor Bus" },
+    { mode: "RB", description: "Bus Rapid Transit" },
+    { mode: "TB", description: "Trolley Bus" },];
+
+    //Place legend below the Sankey diagram with 4 columns and 2 rows.
+const legend = svg.append("g")
+    .attr("transform", `translate(-100, ${height + 30})`);
+
+legend.selectAll("text")
+    .data(legendData)
+    .enter()
+    .append("text")
+    .attr("x", (d, i) => (i % 4) * 160) 
+    .attr("y", (d, i) => Math.floor(i / 4) * 20)
+    .text(d => `${d.mode}: ${d.description}`)
+    .style("font-size", "12px")
+    .style("fill", "#000");
+
+
     // Subscribe to state changes to update opacity
     subscribe(({ selectedFuelTypes }) => {
         links.style("opacity", (d) =>
